@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+typedef struct _string{
+    char** instring;
+    size_t length;
+    size_t capacity;
+} String;
+
+
 // Write message to stderr using format FORMAT
 #define WARN(format,...) fprintf (stderr, "proj1: " format "\n", __VA_ARGS__)
 
