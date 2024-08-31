@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 typedef struct _string{
-    char** instring;
+    char* instring;
     size_t length;
     size_t capacity;
 } String;
