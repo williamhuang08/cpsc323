@@ -51,16 +51,82 @@ String* add_string(String* string, char* addstring) {
     return string;
 }
 
-int main() {
-    String* news = create_string();
-    char in[] = "test";
-    news = add_string(news, in);
-    while (news->length < 50) {
-        add_char(news, 'c');
+String* remove_comments(FILE* input_file) {
+    String* string = create_string();
+    Cstate curr_state = STATE_START;
+    int c;
+
+    while ((c = getc(input_file)) != EOF) {
+        switch (curr_state) {
+
+            case STATE_START:
+                if (c == '\\') {
+                    add_char(string, c);
+                    curr_state = STATE_ESCAPE;
+                }
+                else if (c == '%') {
+                    curr_state = STATE_COMMENT;     
+                }
+                else {
+                    add_char(string, c);
+                }
+                break;
+
+            case STATE_ESCAPE:
+                add_char(string, c);
+                curr_state = STATE_START;
+                break;
+
+            case STATE_COMMENT:
+                bool seen_newline = false;
+                
+                while (!seen_newline) {
+                    if (c == EOF) {
+                        return string;
+                    }
+                    else if (c == '\n') {
+                        seen_newline = true;
+                    }
+                    c = getc(input_file);
+                }
+
+                while (!isblank(c)) {
+                    c = getc(input_file);
+                }
+                curr_state = STATE_START;
+                break;
+        }
     }
-    while (news->length > 0) {
-        pop_char(news);
+    return string;
+}
+
+
+int main(int argc, char* argv[]) {
+    
+    String* string;
+    // Check if there are any input files
+    if (argc > 1) {
+
+        // Go through each file and remove the comments
+        for (int i = 1; i < argc; i++) {
+            FILE* file;
+            file = fopen(argv[i], "r");
+            if (file) {
+                string = remove_comments(file);
+            }
+
+            // If any of the files are cannot be opened, return
+            else {
+                fprintf(stderr, "Invalid input file: File cannot be opened");
+                return 1;
+            }
+        }
     }
-    delete_string(news);
+
+    // If there are not input files, read from stdin
+    else {
+        string = remove_comments(stdin);
+    }
+    printf("%s\n", string->instring);
 }
 

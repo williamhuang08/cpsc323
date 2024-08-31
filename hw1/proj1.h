@@ -15,6 +15,11 @@ typedef struct _string{
     size_t capacity;
 } String;
 
+typedef enum {
+    STATE_START,
+    STATE_ESCAPE,
+    STATE_COMMENT
+} Cstate;
 
 // Write message to stderr using format FORMAT
 #define WARN(format,...) fprintf (stderr, "proj1: " format "\n", __VA_ARGS__)
