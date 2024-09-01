@@ -54,6 +54,7 @@ String* add_string(String* string, char* addstring) {
 String* remove_comments(FILE* input_file) {
     String* string = create_string();
     Cstate curr_state = STATE_START;
+    bool seen_newline = false;
     int c;
 
     while ((c = getc(input_file)) != EOF) {
@@ -67,6 +68,12 @@ String* remove_comments(FILE* input_file) {
                 else if (c == '%') {
                     curr_state = STATE_COMMENT;     
                 }
+                else if (seen_newline) {
+                    if (!isblank(c)){
+                        add_char(string, c);
+                        seen_newline = false;
+                    }
+                }
                 else {
                     add_char(string, c);
                 }
@@ -78,22 +85,11 @@ String* remove_comments(FILE* input_file) {
                 break;
 
             case STATE_COMMENT:
-                bool seen_newline = false;
-                
-                while (!seen_newline) {
-                    if (c == EOF) {
-                        return string;
-                    }
-                    else if (c == '\n') {
-                        seen_newline = true;
-                    }
-                    c = getc(input_file);
+                // bool seen_newline = false;
+                if (c == EOF || c == '\n') {
+                    seen_newline = true;
+                    curr_state = STATE_START;
                 }
-
-                while (!isblank(c)) {
-                    c = getc(input_file);
-                }
-                curr_state = STATE_START;
                 break;
         }
     }
@@ -101,9 +97,48 @@ String* remove_comments(FILE* input_file) {
 }
 
 
+
+String* parse_string(String* string) {
+    char* strcln = string->instring;
+    Pstate curr_state = STATE_BEGIN;
+    char c = *strcln;
+    String* output = create_string();
+
+    while (c != '\0') {
+        switch (curr_state) {
+
+            case STATE_BEGIN:
+                if (c != '\\') {
+                    curr_state = STATE_TEXT;
+                }
+                else {
+                    curr_state = STATE_ESC;
+                }
+
+            case STATE_ESC:
+                if (c == '\\' || c == '#' || c == '%' || c == '{' || c == '}') {
+                    strcln++;
+                    curr_state = STATE_TEXT;
+                }
+                else if (isalnum(c)){
+                    curr_state = STATE_MACROS;
+                }
+                else {
+                    curr_state = STATE_TEXT;
+                }
+
+            case STATE_TEXT:
+                add_char(output, c);
+                strcln++;
+        }
+    }
+}
+
+
 int main(int argc, char* argv[]) {
     
-    String* string;
+    String* cleaned_string;
+    String* output;
     // Check if there are any input files
     if (argc > 1) {
 
@@ -112,7 +147,7 @@ int main(int argc, char* argv[]) {
             FILE* file;
             file = fopen(argv[i], "r");
             if (file) {
-                string = remove_comments(file);
+                cleaned_string = remove_comments(file);
             }
 
             // If any of the files are cannot be opened, return
@@ -125,8 +160,10 @@ int main(int argc, char* argv[]) {
 
     // If there are not input files, read from stdin
     else {
-        string = remove_comments(stdin);
+        cleaned_string = remove_comments(stdin);
     }
-    printf("%s\n", string->instring);
+    // output = parse_string(cleaned_string);
+    printf("%s\n", cleaned_string->instring);
+    // printf("%s\n", output->instring);
 }
 
