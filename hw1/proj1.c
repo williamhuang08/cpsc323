@@ -1,5 +1,9 @@
 #include "proj1.h"
 
+// **************************************************************************************************************** //
+// STRING LIBRARY
+// **************************************************************************************************************** //
+
 String* create_string() {
     String* newstring = malloc(sizeof(String));
     newstring->length = 0;
@@ -33,7 +37,7 @@ String* pop_char(String* string) {
         fprintf(stderr, "Attempting to pop from an empty string\n");
     }
     return string;
-}
+}                                   
 
 void* delete_string(String* string) {
     free(string->instring);
@@ -50,6 +54,77 @@ String* add_string(String* string, char* addstring) {
     }
     return string;
 }
+
+// **************************************************************************************************************** //
+// MACROS LIBRARY
+// **************************************************************************************************************** //
+
+Macros* create_macros() {
+    Macros* allmacros = malloc(sizeof(Macros));
+    allmacros->length = 0;
+    allmacros->capacity = 2;
+    allmacros->names = malloc(sizeof(char *) * allmacros->capacity);
+    allmacros->values = malloc(sizeof(char *) * allmacros->capacity);
+}
+
+int add_macros(Macros* macros, char* name, char* value) {
+    
+    // Adds a macros into the the list of macros if it doesn't already exist
+    for (int i = 0; i < macros->length; i++){
+        if (strcmp(name, macros->names[i])) {
+            return 1;
+        }
+    }
+
+    if (macros->length + 1 > macros->capacity) {
+        macros->capacity *= 2;
+        macros->names = realloc(macros->names, sizeof(char *) * macros->capacity);
+        macros->values = realloc(macros->values, sizeof(char *) * macros->capacity);
+    }
+    macros->names[macros->length] = name;
+    macros->values[macros->length] = value;
+    macros->length += 1;
+
+    return 0;
+}
+
+int undefine_macros(Macros* macros, char* name) {
+    
+    // "'Removes' a macros by replacing the name with '$' and the value with ''"
+    bool found = false;
+
+    for (int i = 0; i < macros->length; i++) {
+        if (strcmp(name, macros->names[i])) {
+            char replacement[] = "$";
+            macros->names[i] = replacement;
+            macros->values[i] = "";
+        }
+    }
+
+    if (!found) {
+        return 1;
+    }
+}
+
+void* delete_macros(Macros* macros) {
+    for (int i = 0; i < macros->length; i++){
+        free(macros->names[i]);
+        free(macros->values[i]);
+    }
+    free(macros->names);
+    free(macros->values);
+    free(macros);
+}
+
+void* include_macros(Macros* macros, char* path, String* output) {
+
+    // Opens the file at the path, processes the macros in the file, and adds it to output
+    
+
+}
+
+
+
 
 String* remove_comments(FILE* input_file) {
     String* string = create_string();
@@ -85,7 +160,6 @@ String* remove_comments(FILE* input_file) {
                 break;
 
             case STATE_COMMENT:
-                // bool seen_newline = false;
                 if (c == EOF || c == '\n') {
                     seen_newline = true;
                     curr_state = STATE_START;
@@ -98,40 +172,62 @@ String* remove_comments(FILE* input_file) {
 
 
 
-String* parse_string(String* string) {
-    char* strcln = string->instring;
+int parse_string(String* string, String* output) {
+    char* c = string->instring;
     Pstate curr_state = STATE_BEGIN;
-    char c = *strcln;
     String* output = create_string();
+    Macros* macros = create_macros();
 
-    while (c != '\0') {
+    while (*c != '\0') {
         switch (curr_state) {
 
             case STATE_BEGIN:
-                if (c != '\\') {
+                if (*c != '\\') {
                     curr_state = STATE_TEXT;
                 }
                 else {
+                    c++;
                     curr_state = STATE_ESC;
                 }
+                break;
 
             case STATE_ESC:
-                if (c == '\\' || c == '#' || c == '%' || c == '{' || c == '}') {
-                    strcln++;
+                if (*c == '\\' || *c == '#' || *c == '%' || *c == '{' || *c == '}') { // if the current character is a special character, pop the last '\' and add the special character
+                    pop_char(output);
+                    add_char(output, *c);
+                    c++;
                     curr_state = STATE_TEXT;
                 }
-                else if (isalnum(c)){
+                else if (isalnum(*c)){ // if the character is alphanumeric it is a macros
                     curr_state = STATE_MACROS;
                 }
-                else {
+                else { // if the character is none, then add the current character, also keep the '/'
+                    add_char(output, *c);
+                    c++;
                     curr_state = STATE_TEXT;
                 }
+                break;
 
             case STATE_TEXT:
-                add_char(output, c);
-                strcln++;
+                if (*c == '\\') { // if the character is a '\', then add it and change to the escape state
+                    curr_state = STATE_ESC;
+                }
+                add_char(output, *c);
+                c++;
+                break;
+
+            case STATE_MACROS:
+                String* key = create_string();
+                while (*c != '{') {
+                    add_char(key, *c);
+                    c++;
+                }
+                if (strcmp(key->instring, "def")) {
+
+                }
         }
     }
+    return 0;
 }
 
 
@@ -162,8 +258,9 @@ int main(int argc, char* argv[]) {
     else {
         cleaned_string = remove_comments(stdin);
     }
-    // output = parse_string(cleaned_string);
+    output = parse_string(cleaned_string);
     printf("%s\n", cleaned_string->instring);
-    // printf("%s\n", output->instring);
+    printf("%d\n", cleaned_string->length);
+    printf("%s\n", output->instring);
 }
 

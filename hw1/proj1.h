@@ -16,8 +16,10 @@ typedef struct _string{
 } String;
 
 typedef struct _macros{
-    char** key;
-    char** value;
+    char** names;
+    char** values;
+    size_t length;
+    size_t capacity;
 } Macros;
 
 typedef enum {
