@@ -136,6 +136,9 @@ char** parse_macros(char* key, char** c, int num_args) {
             if (num_braces < 0 || **c == '\n' || **c == EOF) {
                 return NULL;
             }
+            else if (cpy > 0 && num_braces == 0 && isblank(**c)){
+                return NULL;
+            }
             else if (**c == '{') {
                 num_braces++;
             } 
@@ -149,10 +152,7 @@ char** parse_macros(char* key, char** c, int num_args) {
 
             if (num_braces == 0) {
                 break;
-            }
-            if (num_braces < 0) {
-                return NULL;
-            }                      
+            }                   
         }
         output[num_args - cpy] = arg->instring;
         cpy -= 1;
@@ -256,7 +256,9 @@ int parse_string(String* string, String* output) {
                 String* key = create_string();
 
                 while (*c != '{') {
-                    if (*c == '\0' || !isalnum(*c)) {
+                    if (*c == '\0' || *c == '\n' || !isalnum(*c)) {
+                        // error handling for non-alphanumeric names;
+                        fprintf(stderr, "Definition error: macros names must be alphanumeric");
                         return 1;
                     }
                     add_char(key, *c);
@@ -274,11 +276,12 @@ int parse_string(String* string, String* output) {
                     int res = add_macros(macros, args[0], args[1]);
                     if (res == 1) {
                         // error handling for invalid macros definitions
+                        fprintf(stderr, "Definition error: Invalid macro name definition");
                         return 1;
                     }
                 }
                 else if (strcmp(key->instring, "undef") == 0) {
-                    
+
                     char** args = parse_macros(key, &c, 1);
                     if (args == NULL) {
                         // error handling for unbalanced braces
@@ -286,6 +289,25 @@ int parse_string(String* string, String* output) {
                         return 1;
                     }
 
+                }
+                else if (strcmp(key->instring, "if") == 0) {
+                    char** args = parse_macros(key, &c, 3);
+
+                    if (args == NULL) {
+                        // error handling for unbalanced braces
+                        fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.");
+                        return 1;
+                    }
+
+                    char* ifthen = args[1];
+                    char* ifelse = args[2];
+
+                    if (strcmp(args[0], "") != 0) {
+                        add_string(output, ifthen);
+                    }
+                    else {
+                        add_string(output, ifelse);
+                    }
                 }
                 curr_state = STATE_BEGIN;
                 break;
