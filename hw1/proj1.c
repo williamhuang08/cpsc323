@@ -14,11 +14,12 @@ String* create_string() {
 } 
 
 String* add_char(String* string, char c) {
-    if (string->length + 1 > string->capacity) {
+    if (string->length + 2 > string->capacity) {
         string->capacity *= 2;
         string->instring = realloc(string->instring, sizeof(char) * string->capacity);
     }
     string->instring[string->length] = c;
+    string->instring[string->length + 1] = '\0';
     string->length += 1;
 
     return string;
@@ -95,9 +96,8 @@ int undefine_macros(Macros* macros, char* name) {
 
     for (int i = 0; i < macros->length; i++) {
         if (strcmp(name, macros->names[i])) {
-            char replacement[] = "$";
-            macros->names[i] = replacement;
-            macros->values[i] = "";
+            macros->names[i] = NULL;
+            macros->values[i] = NULL;
         }
     }
 
@@ -123,7 +123,42 @@ void* include_macros(Macros* macros, char* path, String* output) {
 
 }
 
+char** parse_macros(char* key, char** c, int num_args) {
+    
+    char** output = malloc(sizeof(char*) * num_args);
+    int cpy = num_args;
 
+    while (cpy > 0) {
+        int num_braces = 0;
+        String* arg = create_string();
+
+        while (1) {
+            if (num_braces < 0 || **c == '\n' || **c == EOF) {
+                return NULL;
+            }
+            else if (**c == '{') {
+                num_braces++;
+            } 
+            else if (**c == '}') {
+                num_braces--;
+            }
+            else {
+                add_char(arg, **c);
+            }
+            (*c)++;
+
+            if (num_braces == 0) {
+                break;
+            }
+            if (num_braces < 0) {
+                return NULL;
+            }                      
+        }
+        output[num_args - cpy] = arg->instring;
+        cpy -= 1;
+    }
+    return output;
+}
 
 
 String* remove_comments(FILE* input_file) {
@@ -175,7 +210,6 @@ String* remove_comments(FILE* input_file) {
 int parse_string(String* string, String* output) {
     char* c = string->instring;
     Pstate curr_state = STATE_BEGIN;
-    String* output = create_string();
     Macros* macros = create_macros();
 
     while (*c != '\0') {
@@ -186,6 +220,7 @@ int parse_string(String* string, String* output) {
                     curr_state = STATE_TEXT;
                 }
                 else {
+                    add_char(output, *c);
                     c++;
                     curr_state = STATE_ESC;
                 }
@@ -199,6 +234,7 @@ int parse_string(String* string, String* output) {
                     curr_state = STATE_TEXT;
                 }
                 else if (isalnum(*c)){ // if the character is alphanumeric it is a macros
+                    pop_char(output);
                     curr_state = STATE_MACROS;
                 }
                 else { // if the character is none, then add the current character, also keep the '/'
@@ -218,23 +254,52 @@ int parse_string(String* string, String* output) {
 
             case STATE_MACROS:
                 String* key = create_string();
+
                 while (*c != '{') {
+                    if (*c == '\0' || !isalnum(*c)) {
+                        return 1;
+                    }
                     add_char(key, *c);
                     c++;
                 }
-                if (strcmp(key->instring, "def")) {
+                if ((strcmp(key->instring, "def")) == 0) {
+                    char** args = parse_macros(key, &c, 2);
+
+                    if (args == NULL) {
+                        // error handling for unbalanced braces
+                        fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.");
+                        return 1;
+                    }
+
+                    int res = add_macros(macros, args[0], args[1]);
+                    if (res == 1) {
+                        // error handling for invalid macros definitions
+                        return 1;
+                    }
+                }
+                else if (strcmp(key->instring, "undef") == 0) {
+                    
+                    char** args = parse_macros(key, &c, 1);
+                    if (args == NULL) {
+                        // error handling for unbalanced braces
+                        fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.");
+                        return 1;
+                    }
 
                 }
+                curr_state = STATE_BEGIN;
+                break;
         }
     }
     return 0;
 }
 
-
+// /c/cs323/proj1/proj1 test.txt
+// ./proj1 test.txt
 int main(int argc, char* argv[]) {
     
     String* cleaned_string;
-    String* output;
+    String* output = create_string();
     // Check if there are any input files
     if (argc > 1) {
 
@@ -258,7 +323,7 @@ int main(int argc, char* argv[]) {
     else {
         cleaned_string = remove_comments(stdin);
     }
-    output = parse_string(cleaned_string);
+    parse_string(cleaned_string, output);
     printf("%s\n", cleaned_string->instring);
     printf("%d\n", cleaned_string->length);
     printf("%s\n", output->instring);

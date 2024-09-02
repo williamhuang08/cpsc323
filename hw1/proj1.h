@@ -37,6 +37,12 @@ typedef enum {
     STATE_END
 } Pstate;
 
+typedef enum {
+    SUBSTATE_NAME,
+    SUBSTATE_ARG
+} MSubstate;
+
+
 // Write message to stderr using format FORMAT
 #define WARN(format,...) fprintf (stderr, "proj1: " format "\n", __VA_ARGS__)
 

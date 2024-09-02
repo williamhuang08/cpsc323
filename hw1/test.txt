@@ -1,3 +1,6 @@
 This is a simple test with comments % This is a comments      
         a % another comment here there are alspo some \'
  no more \% is this comment \;kk;;
+
+ \def{hello}{will} \undef{hello}
+are we USC champ
