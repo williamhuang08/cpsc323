@@ -4,6 +4,7 @@
 // STRING LIBRARY
 // **************************************************************************************************************** //
 
+// Intializes a string struct and creates space on the heap for a char array
 String* create_string() {
     String* newstring = malloc(sizeof(String));
     newstring->length = 0;
@@ -13,6 +14,7 @@ String* create_string() {
     return newstring;
 } 
 
+// Adds a char to a given string and appends the null terminating character to the end
 String* add_char(String* string, char c) {
     if (string->length + 2 > string->capacity) {
         string->capacity *= 2;
@@ -25,6 +27,7 @@ String* add_char(String* string, char c) {
     return string;
 }
 
+// Pops the last char from the string, gives error if you pop from an empty string
 String* pop_char(String* string) {
     if (string->length > 0) {
         string->length -= 1;
@@ -36,6 +39,7 @@ String* pop_char(String* string) {
     }
     else {
         fprintf(stderr, "Attempting to pop from an empty string\n");
+        return NULL;
     }
     return string;
 }                                   
@@ -47,7 +51,7 @@ void* delete_string(String* string) {
 
 String* add_string(String* string, char* addstring) {
     int i = 0;
-    int length = strlen(addstring) + 1;
+    int length = strlen(addstring);
 
     while (i < length) {
         add_char(string, addstring[i]);
@@ -123,6 +127,18 @@ void* include_macros(Macros* macros, char* path, String* output) {
 
 }
 
+void* search_macros(Macros* macros, char* output) {
+    int i;
+    i = 0;
+    while (i < macros->length) {
+        if (strcmp(macros->names[i], output) == 0) {
+            return 0;
+        }
+        i += 1;
+    }
+    return 1;
+}
+
 char** parse_macros(char* key, char** c, int num_args) {
     
     char** output = malloc(sizeof(char*) * num_args);
@@ -133,7 +149,7 @@ char** parse_macros(char* key, char** c, int num_args) {
         String* arg = create_string();
 
         while (1) {
-            if (num_braces < 0 || **c == '\n' || **c == EOF) {
+            if (num_braces < 0 || **c == '\n' || **c == '\0') {
                 return NULL;
             }
             else if (cpy > 0 && num_braces == 0 && isblank(**c)){
@@ -229,12 +245,18 @@ int parse_string(String* string, String* output) {
             case STATE_ESC:
                 if (*c == '\\' || *c == '#' || *c == '%' || *c == '{' || *c == '}') { // if the current character is a special character, pop the last '\' and add the special character
                     pop_char(output);
+                    if (pop_char(string) == NULL) {
+                        return 1;
+                    }
                     add_char(output, *c);
                     c++;
                     curr_state = STATE_TEXT;
                 }
                 else if (isalnum(*c)){ // if the character is alphanumeric it is a macros
                     pop_char(output);
+                    if (pop_char(string) == NULL) {
+                        return 1;
+                    }
                     curr_state = STATE_MACROS;
                 }
                 else { // if the character is none, then add the current character, also keep the '/'
@@ -303,6 +325,25 @@ int parse_string(String* string, String* output) {
                     char* ifelse = args[2];
 
                     if (strcmp(args[0], "") != 0) {
+                        add_string(output, ifthen);
+                    }
+                    else {
+                        add_string(output, ifelse);
+                    }
+                }
+                else if (strcmp(key->instring, "ifdef") == 0) {
+                    char** args = parse_macros(key, &c, 3);
+
+                    if (args == NULL) {
+                        // error handling for unbalanced braces
+                        fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.");
+                        return 1;
+                    }
+
+                    char* ifthen = args[1];
+                    char* ifelse = args[2];
+
+                    if (search_macros(macros, args[0]) == 0) {
                         add_string(output, ifthen);
                     }
                     else {
