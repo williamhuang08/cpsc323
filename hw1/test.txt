@@ -4,3 +4,4 @@ This is a simple test with comments % This is a comments
 
  \def{hello}{will} \undef{hello}
 are we USC champ
+\if{}{w}{lost}this working

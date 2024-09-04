@@ -1,1 +1,3 @@
-\def{B}{}{
+\def{testMacro}{some text #}
+
+\ifdef{}{here}{works}

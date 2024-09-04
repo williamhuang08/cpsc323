@@ -44,11 +44,13 @@ String* pop_char(String* string) {
     return string;
 }                                   
 
+// Frees the char* array and the string
 void* delete_string(String* string) {
     free(string->instring);
     free(string);
 }
 
+// Adds a string to a string struct by repeatedly calling the addchar function
 String* add_string(String* string, char* addstring) {
     int i = 0;
     int length = strlen(addstring);
@@ -64,6 +66,7 @@ String* add_string(String* string, char* addstring) {
 // MACROS LIBRARY
 // **************************************************************************************************************** //
 
+// Create a macros struct to with arrays to hold names and values at the same indices
 Macros* create_macros() {
     Macros* allmacros = malloc(sizeof(Macros));
     allmacros->length = 0;
@@ -72,6 +75,7 @@ Macros* create_macros() {
     allmacros->values = malloc(sizeof(char *) * allmacros->capacity);
 }
 
+// Add a macros to the macros struct by adding the name and vale to the arrays
 int add_macros(Macros* macros, char* name, char* value) {
     
     // Adds a macros into the the list of macros if it doesn't already exist
@@ -93,9 +97,10 @@ int add_macros(Macros* macros, char* name, char* value) {
     return 0;
 }
 
+// Undefines a macros by replacing the name and value with NULL
 int undefine_macros(Macros* macros, char* name) {
     
-    // "'Removes' a macros by replacing the name with '$' and the value with ''"
+    // "'Removes' a macros by replacing the name with 'NULL' and the value with 'NULL'"
     bool found = false;
 
     for (int i = 0; i < macros->length; i++) {
@@ -110,6 +115,7 @@ int undefine_macros(Macros* macros, char* name) {
     }
 }
 
+// Macros are deleted by freeing each char* in the names and values array and then freeing the pointer to the char* arrays. Finally, the macros struct iteself is freed.
 void* delete_macros(Macros* macros) {
     for (int i = 0; i < macros->length; i++){
         free(macros->names[i]);
@@ -127,11 +133,12 @@ void* include_macros(Macros* macros, char* path, String* output) {
 
 }
 
-void* search_macros(Macros* macros, char* output) {
+// Searches for a macros by looking if a name in the names array matches the input name
+void* search_macros(Macros* macros, char* name) {
     int i;
     i = 0;
     while (i < macros->length) {
-        if (strcmp(macros->names[i], output) == 0) {
+        if (strcmp(macros->names[i], name) == 0) {
             return 0;
         }
         i += 1;
