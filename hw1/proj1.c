@@ -172,8 +172,10 @@ int undefine_macros(Macros* macros, char* name) {
 // Macros are deleted by freeing each char* in the names and values array and then freeing the pointer to the char* arrays. Finally, the macros struct iteself is freed.
 void* delete_macros(Macros* macros) {
     for (int i = 0; i < macros->length; i++){
-        free(macros->names[i]);
-        free(macros->values[i]);
+        if (macros->names[i] != NULL) {
+            free(macros->names[i]);
+            free(macros->values[i]);
+        }
     }
     free(macros->names);
     free(macros->values);
@@ -236,13 +238,13 @@ char** parse_macros(char* key, char** c, int num_args, int* index) {
                 }
             } 
             if (num_braces < 0 || **c == '\0') {
-                delete_string(arg);
                 free_strings(output, num_args - cpy);
+                delete_string(arg);
                 return NULL;
             }
             else if (cpy > 0 && num_braces == 0 && isblank(**c)){
-                delete_string(arg);
                 free_strings(output, num_args - cpy);
+                delete_string(arg);
                 return NULL;
             }
             else if (**c == '{') {
@@ -873,10 +875,10 @@ int parse_string(String* string, String* output, Macros* macros) {
 int main(int argc, char* argv[]) {
     
     String* total = create_string();
-    String* cleaned_string;
     String* output = create_string();
-    temp = NULL;
     Macros* macros = create_macros();
+    String* cleaned_string;
+    temp = NULL;
     global_key = NULL;
     // temp = create_string();
     // Check if there are any input files
@@ -895,6 +897,8 @@ int main(int argc, char* argv[]) {
 
             // If any of the files are cannot be opened, return
             else {
+                delete_string(output);
+                delete_string(total);
                 fprintf(stderr, "Invalid input file: File cannot be opened");
                 return 1;
             }
@@ -903,7 +907,9 @@ int main(int argc, char* argv[]) {
 
     // If there are not input files, read from stdin
     else {
-        total = remove_comments(stdin);
+        String* cleaned = remove_comments(stdin);
+        add_string(total, cleaned->instring);
+        delete_string(cleaned);
     }
     // printf("\n cleaned before state = %s\n", cleaned_string->instring);
     int correct = parse_string(total, output, macros);
@@ -924,6 +930,7 @@ int main(int argc, char* argv[]) {
     if (temp != NULL){
         free(temp);
     }
+    
 }
 
 
