@@ -52,3 +52,43 @@ typedef enum {
 // Double the size of an allocated block PTR with NMEMB members and update
 // NMEMB accordingly.  (NMEMB is only the size in bytes if PTR is a char *.)
 #define DOUBLE(ptr,nmemb) realloc (ptr, (nmemb *= 2) * sizeof(*ptr))
+
+int parse_string(String* string, String* output, Macros* macros);
+
+void* expand_macros(Macros* macros, String* output, char* name, char* replacement);
+
+String* remove_comments(FILE* input_file);
+
+String** parse_macros_S(char* key, char** c, int num_args, int* index);
+
+char** parse_macros(char* key, char** c, int num_args, int* index);
+
+String* extend_file(String* input, String* file, int index);
+
+void* search_macros(Macros* macros, char* name);
+
+void* delete_macros(Macros* macros);
+
+int undefine_macros(Macros* macros, char* name);
+
+int add_macros(Macros* macros, char* name, char* value);
+
+Macros* create_macros();
+
+void free_strings(char** strings, int num);
+
+String* insert_string(String* original, char* insert, int index, int insert_len);
+
+String* add_string(String* string, char* addstring);
+
+void* delete_string(String* string);
+
+char top_string(String* string);
+
+char pop_char(String* string);
+
+void clear_string(String* str);
+
+String* add_char(String* string, char c);
+
+String* create_string();

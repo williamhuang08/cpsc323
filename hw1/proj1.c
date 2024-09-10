@@ -263,7 +263,6 @@ char** parse_macros(char* key, char** c, int num_args, int* index) {
             } 
             else if (**c == '}') {
                 if (num_escapes % 2 == 0) {
-                    // printf("num_args = %d", num_braces);
                     if (inarg && num_braces - 1 != 0) {
                         add_char(arg, **c);
                     }
@@ -364,90 +363,6 @@ String** parse_macros_S(char* key, char** c, int num_args, int* index) {
         cpy -= 1;
     }
     return output;
-    // String** output = malloc(sizeof(String*) * num_args);
-    // int cpy = num_args;
-    // bool inarg = false;
-    // bool escaped = false;
-
-    // while (cpy > 0) {
-    //     int num_escapes = 0;
-    //     int num_braces = 0;
-    //     String* arg = create_string();
-
-    //     while (1) {
-    //         if (**c == '\\') {
-    //             while (**c != '\0' && **c == '\\') {
-    //                 add_char(output, *c);
-    //                 num_escapes++;
-    //                 (*index)++;
-    //                 (*c)++;
-    //             }
-    //             // if (num_escapes % 2 == 0) {
-    //             //     num_escapes = num_escapes / 2;
-    //             //     while (num_escapes > 0) {
-    //             //         add_char(arg, '\\');
-    //             //         num_escapes -= 1;
-    //             //     }
-    //             // } 
-    //             // else {
-    //             //     num_escapes = (num_escapes - 1) / 2 + 1;
-    //             //     while (num_escapes > 0) {
-    //             //         add_char(arg, '\\');
-    //             //         num_escapes -= 1;
-    //             //     }
-    //             //     if (**c == '\\' || **c == '#' || **c == '%' || **c == '{' || **c == '}') {
-    //             //         add_char(arg, **c);
-    //             //     }
-    //             // }
-    //         }
-    //         if (num_braces < 0 || **c == '\n' || **c == '\0') {
-    //             delete_string(arg);
-    //             free_strings(output, num_args - cpy);
-    //             return NULL;
-    //         }
-    //         else if (cpy > 0 && num_braces == 0 && isblank(**c)){
-    //             delete_string(arg);
-    //             free_strings(output, num_args - cpy);
-    //             return NULL;
-    //         }
-    //         else if (**c == '{') {
-    //             if (num_escapes % 2 == 0) {
-    //                 if (inarg) {
-    //                     add_char(arg, **c);
-    //                 }
-    //                 num_braces++;
-    //                 inarg = true;
-    //             }
-    //         } 
-    //         else if (**c == '}') {
-    //             if (num_escapes % 2 == 0) {
-    //                 if (inarg && num_braces - 1 != 0) {
-    //                     add_char(arg, **c);
-    //                 }
-    //                 num_braces--;
-    //             }
-    //             else {
-    //                 if (inarg && num_braces - 1 != 0) {
-    //                     add_char(arg, **c);
-    //                 }
-    //             }
-    //         }
-    //         else {
-    //             add_char(arg, **c);
-    //         }
-    //         num_escapes = 0;
-    //         (*index)++;
-    //         (*c)++;
-
-    //         if (num_braces == 0) {
-    //             inarg = false;
-    //             break;
-    //         }                   
-    //     }
-    //     output[num_args - cpy] = arg;
-    //     cpy -= 1;
-    // }
-    // return output;
 }
 
 
@@ -507,36 +422,16 @@ void* expand_macros(Macros* macros, String* output, char* name, char* replacemen
     Pstate curr_state = STATE_BEGIN;
     char c = macros->values[i][j];
     while (c != '\0') {
+        int num_escapes = 0;
         if (c == '\\') {
-            int num_escapes = 0;
             while (c != '\0' && c == '\\') {
+                add_char(output, c);
                 num_escapes++;
                 j++;
                 c = macros->values[i][j];
             }
-                
-            if (num_escapes % 2 == 0) {
-                num_escapes = num_escapes / 2;
-                while (num_escapes > 0) {
-                    add_char(output, '\\');
-                    num_escapes -= 1;
-                }
-            } 
-            else {
-                num_escapes = (num_escapes - 1) / 2 + 1;
-                while (num_escapes > 0) {
-                    add_char(output, '\\');
-                    num_escapes -= 1;
-                }
-                if (c == '\\' || c == '#' || c == '%' || c == '{' || c == '}') {
-                    pop_char(output);
-                }
-                add_char(output, c);
-                j++;
-                c = macros->values[i][j];
-            }
         }    
-        if (c == '#') {
+        if (num_escapes % 2 == 0 && c == '#') {
             add_string(output, replacement);
         } else {
             add_char(output, c);
@@ -546,56 +441,6 @@ void* expand_macros(Macros* macros, String* output, char* name, char* replacemen
             c = macros->values[i][j];
         }
     }
-    // while (c != '\0') {
-    //     switch(curr_state) {
-    //         case STATE_BEGIN:
-    //             if (c != '\\') {
-    //                 curr_state = STATE_TEXT;
-    //             }
-    //             else {
-    //                 add_char(output, c);
-    //                 j++;
-    //                 c = macros->values[i][j];
-    //                 curr_state = STATE_ESC;
-    //             }
-    //             break;
-            
-    //         case STATE_ESC:
-    //             if (c == '\\' || c == '#' || c == '%' || c == '{' || c == '}') { // if the current character is a special character, pop the last '\' and add the special character
-    //                 pop_char(output);
-    //                 add_char(output, c);
-    //                 j++;
-    //                 c = macros->values[i][j];
-    //                 curr_state = STATE_TEXT;
-    //             }
-    //             // else if (isalnum(c)){ // if the character is alphanumeric it is a macros
-    //             //     pop_char(output);
-
-    //             //     curr_state = STATE_MACROS;
-    //             // }
-    //             else { // if the character is none, then add the current character, also keep the '/'
-    //                 add_char(output, c);
-    //                 j++;
-    //                 c = macros->values[i][j];
-    //                 curr_state = STATE_TEXT;
-    //             }
-    //             break;
-
-    //         case STATE_TEXT:
-    //             if (c == '\\') { // if the character is a '\', then add it and change to the escape state
-    //                 curr_state = STATE_ESC;
-    //             }
-    //             else if (c == '#') {
-    //                 add_string(output, replacement);
-    //             }
-    //             else {
-    //                 add_char(output, c);
-    //             }
-    //             j++;
-    //             c = macros->values[i][j];
-    //             break;
-    //     }
-    // }
 }
 
 global_state = STATE_BEGIN;
@@ -606,6 +451,7 @@ int parse_string(String* string, String* output, Macros* macros) {
     char* c = string->instring;
     int index = 0;
     while (*c != '\0') {
+
         switch (global_state) {
 
             case STATE_BEGIN:
@@ -679,8 +525,23 @@ int parse_string(String* string, String* output, Macros* macros) {
                         fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.\n");
                         return 1;
                     }
-                    // printf("FIRST ARGUMENT = %s ", args[0]);
-                    // printf("SECOND ARGUMENT = %s \n", args[1]);
+
+                    if (strcmp(args[0], "def") == 0 || strcmp(args[0], "undef") == 0 || strcmp(args[0], "include") == 0 || strcmp(args[0], "expandafter") == 0 || strcmp(args[0], "ifdef") == 0 || strcmp(args[0], "if") == 0) {
+                        delete_string(key);
+                        fprintf(stderr, "Cannot redefine one of the 6 given macros");
+                        return 1;
+                    }
+
+                    int j = 0;
+                    while (args[0][j] != '\0') {
+                        if (!isalnum(args[0][j])) {
+                            delete_string(key);
+                            fprintf(stderr, "Macros name must be alnum");
+                            return 1;
+                        }
+                        j++;
+                    }
+
                     int res = add_macros(macros, args[0], args[1]);
                     if (res == 1) {
                         free_strings(args, 2);
@@ -705,10 +566,8 @@ int parse_string(String* string, String* output, Macros* macros) {
                     else {
                         logic_str = args[2];
                     }
-                    // printf("logic_str = %s\n", logic_str);
                     int i = 0;
                     while (logic_str[i] != '\0') {
-                        // add_char(output, logic_str[i]);
                         i += 1;
                     }
                     insert_string(string, logic_str, index, i + 1);
@@ -735,7 +594,6 @@ int parse_string(String* string, String* output, Macros* macros) {
                         i += 1;
                     }
                     insert_string(string, logic_str, index, i + 1);
-                    // printf("string after inserted = %s\n", string->instring);
                     c = string->instring + index;
 
 
@@ -746,8 +604,7 @@ int parse_string(String* string, String* output, Macros* macros) {
                         fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.\n");
                         return 1;
                     }
-                    // printf("arg to undef = %s\n", args[0]);
-                    // printf("should not be empty here %s", output->instring);
+
                     int val = undefine_macros(macros, args[0]);
                     if (val == 1) {
                         delete_string(key);
@@ -767,8 +624,7 @@ int parse_string(String* string, String* output, Macros* macros) {
                     }
 
                     FILE* file;
-                    // String* cleaned_name = create_string();
-                    // parse_string(args[0], cleaned_name, macros);
+
                     file = fopen(args[0], "r");
                     if (file == NULL) {
                         free_strings(args, 1);
@@ -794,12 +650,9 @@ int parse_string(String* string, String* output, Macros* macros) {
                         fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.\n");
                         return 1;
                     }
-                    // printf("args[0] = %s ", args[0]->instring);                    
-                    // printf("args[1] = %s ", args[1]->instring);
 
                     temp = create_string();
                     global_state = STATE_BEGIN;
-                    // printf("Before parsing: temp = %s\n", temp ? temp->instring : "NULL");
 
                     parse_string(args[1], temp, macros);
                     if (global_state == STATE_MACROS){
@@ -808,20 +661,17 @@ int parse_string(String* string, String* output, Macros* macros) {
                         key = global_key;
                         goto parse_macro_key; 
                     }
-                    // printf("temp = %s", temp->instring);
-                    
-                    // printf("inserted = %s", args[0]->instring);
-                    // printf("string = %s", string->instring);
+
                     insert_string(string, args[0]->instring, index, args[0]->length);
-                    // printf("inserted = %s", string->instring);
                     insert_string(string, temp->instring, index + args[0]->length, temp->length);
-                    // insert_string(string, temp->instring, index + args[0]->length - 1, temp->length);
+
                     c = string->instring + index;
                     free(temp->instring);
                     delete_string(args[0]);
                     delete_string(args[1]);
                     free(args);
                 } else if (search_macros(macros, key->instring) == 0) {
+                    // printf("This is the key %s ", key->instring);
                     // Expand macro, process recursively
                     char** args = parse_macros(key, &c, 1, &index);
                     if (args == NULL) {
@@ -829,17 +679,15 @@ int parse_string(String* string, String* output, Macros* macros) {
                         fprintf(stderr, "Definition error: The braces are not balanced for a macro definition.\n");
                         return 1;
                     }
+
                     String* expanded_macro = create_string();
-                    // printf("arg0 = %s", args[0]);
                     expand_macros(macros, expanded_macro, key->instring, args[0]);
-                    // printf("expanded macros = %s \n", expanded_macro->instring);
-                    // Call parse_string recursively on the expanded macro output
-                    // String* temp_output = create_string();
-                    // add_string(temp_output, output->instring);
+
 
                     global_state = STATE_BEGIN;
                     parse_string(expanded_macro, output, macros);
                     if (global_state == STATE_MACROS){
+
                         delete_string(expanded_macro);
                         delete_string(key);
                         free_strings(args, 1);
@@ -911,24 +759,21 @@ int main(int argc, char* argv[]) {
         add_string(total, cleaned->instring);
         delete_string(cleaned);
     }
-    // printf("\n cleaned before state = %s\n", cleaned_string->instring);
+
     int correct = parse_string(total, output, macros);
-    // printf("%d\n", cleaned_string->length);
     if (correct != 1) {
         printf("%s", output->instring);
     }
+
     delete_string(output);
     delete_string(total);
     delete_macros(macros);
-    // if (global_key != NULL) {
-    //     free(global_key->instring);
-    // }
-    // free(global_key);
-    // if (global_key != NULL) {
-    //     delete_string(global_key);
-    // }
+
     if (temp != NULL){
         free(temp);
+    }
+    if (correct == 1) {
+        return 1;
     }
     
 }
