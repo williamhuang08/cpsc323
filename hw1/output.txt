@@ -1,0 +1,7 @@
+
+ cleaned before state = \def{testMacro}{some text #}
+\def{macroFragment}{goes #}
+\testMacro{\macroFragment}{here}
+output = {testMacro}{some text #}
+{macroFragment}{goes #}
+{

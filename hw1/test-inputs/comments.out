@@ -1,0 +1,7 @@
+This line should not have a percent.
+This line SHOULD have a percent.% Yay!
+This line should not have a percent, but should have a backslash.\
+Wait for it...This line should have no whitespace before it.
+
+
+That's it! Yay!

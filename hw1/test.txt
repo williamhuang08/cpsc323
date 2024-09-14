@@ -5,3 +5,12 @@ This is a simple test with comments % This is a comments
  \def{hello}{will} \undef{hello}
 are we USC champ
 \if{}{w}{lost}this working
+
+Special Cases for Include
+/include{\\{hi.txt}
+
+\\{hi.txt --> \{hi.txt
+
+pop output until you reach a character that is not the same as the one you have in input string
+then pop back out to into the input string to create the string in order
+once it is in order start from the input string and continue in state machine in order
