@@ -8,10 +8,16 @@
 #include<limits.h>
 #include <unordered_map>
 #include <utility>
+#include <vector>
+#include <algorithm>
+#include <string>
 
 // (Helper functions, types, structs, macros, globals, etc.)
+std::unordered_map<std::string, size_t> alltime;
+std::unordered_map<std::string, std::pair<const char*, long>> strings;
 std::unordered_map<uintptr_t, std::pair<const char*, long>> lines;
 std::unordered_map<uintptr_t, size_t> mallocsizes;
+std::vector<std::pair<std::pair<const char*, long>, size_t> > vectorsizes;
 
 unsigned long long nactive = 0;         // # active allocations
 unsigned long long active_size= 0;     // # bytes in active allocations
@@ -30,6 +36,20 @@ uintptr_t canary_value = 0xDEADBEEF;
 ///    The memory is not initialized. If `sz == 0`, then dmalloc_malloc must
 ///    return a unique, newly-allocated pointer value. The allocation
 ///    request was at location `file`:`line`.
+
+bool comparevals(std::pair<std::pair<const char*, long>, size_t>  &a, std::pair<std::pair<const char*, long>, size_t>  &b) {
+    return a.second > b.second;
+}
+
+
+void sort(std::unordered_map<std::string, size_t> &map) {
+    for (auto& i : map) {
+        auto pair = std::make_pair(strings[i.first], i.second);
+        vectorsizes.push_back(pair);
+    }
+
+    sort(vectorsizes.begin(), vectorsizes.end(), comparevals);
+}
 
 void* dmalloc_malloc(size_t sz, const char* file, long line) {
     (void) file, (void) line;   // avoid uninitialized variable warnings
@@ -64,6 +84,20 @@ void* dmalloc_malloc(size_t sz, const char* file, long line) {
     auto pair = std::make_pair(file, line);
     mallocsizes[(uintptr_t) after] = sz;
     lines[(uintptr_t) after] = pair;
+
+    std::string str_from_cstr(file);
+    std::string str_long = std::to_string(line);
+    std::string result = str_from_cstr + str_long;
+    
+    auto i1 = alltime.find(result);
+
+    if (i1 != alltime.end()) {
+        alltime[result] += sz;
+    }
+    else {
+        alltime[result] = sz;
+    }
+    strings[result] = pair;
     return after;
 }
 
@@ -98,7 +132,22 @@ void dmalloc_free(void* ptr, const char* file, long line) {
             exit(1);
         }
         else {
-            fprintf(stderr, "MEMORY BUG: %s:%ld: invalid free of pointer %p, not allocated", file, line, ptr);
+            fprintf(stderr, "MEMORY BUG: %s:%ld: invalid free of pointer %p, not allocated\n", file, line, ptr);
+            for (auto i : lines) {
+                uintptr_t ptraddress = (uintptr_t) ptr;
+                uintptr_t cmpaddress = i.first;
+                size_t size = mallocsizes[i.first];     
+                if (ptraddress >= cmpaddress && ptraddress <= (cmpaddress + size)) {
+                    size_t diff;
+                    if (ptraddress >= cmpaddress) {
+                        diff = ptraddress - cmpaddress;
+                    }
+                    else {
+                        diff = cmpaddress - ptraddress;
+                    }
+                    fprintf(stderr, "  %s:%ld: %p is %ld bytes inside a %ld byte region allocated here\n", i.second.first, i.second.second, (void*) i.first, diff, size);
+                }
+            }
             exit(1);
         }
     }
@@ -122,7 +171,7 @@ void dmalloc_free(void* ptr, const char* file, long line) {
     // }
 
     active_size -= ptr_size;
-
+    ptr = (void*) ((uintptr_t) ptr - size_canary - size_buffer);
     base_free(ptr);
 }
 
@@ -196,5 +245,25 @@ void dmalloc_print_leak_report() {
 ///    Print a report of heavily-used allocation locations.
 
 void dmalloc_print_heavy_hitter_report() {
-    // Your heavy-hitters code here
+
+    sort(alltime);
+    // printf("vector size: %ld", vectorsizes.size());
+    // size_t sum_size = 0;
+    // printf("total_size = %ld\n", total_size);
+    // for (auto & it : vectorsizes) {
+    //     sum_size += it.second;
+    // }
+
+    for (auto & it : vectorsizes) {
+        // printf("tot_size = %ld\n", total_size);
+        float percent = (float) it.second / total_size;
+        // printf("individual_size = %ld\n", it.second);
+        // printf("PERCENT = %.1f\n", percent);
+        if (percent >= 0.2) {
+            // fprintf(stdout, "HEAVY HITTER: %s:%ld: %ld bytes (~%.1f%%)\n", alltime[(uintptr_t) it.first].first, alltime[(uintptr_t) it.first].second, it.second, percent * 100);
+            fprintf(stdout, "HEAVY HITTER: %s:%ld: %ld bytes (~%.1f%%)\n", it.first.first, it.first.second, it.second, percent * 100);
+
+        }
+    }
 }
+
