@@ -1,0 +1,75 @@
+*** THINGS TO REMEMBER ***
+In instructions
+q - 64 bits
+l - 32 bits
+w - 16 bits
+b - 8 bits
+
+Examples:
+%rax = R[rax] = get the value stored in the register rax
+(%eax) = M[R[%eax]] = take the value at the register eax as an address, get the value at that address
+7(%eax, ecx) = M[7 + R[%eax] + R[%ecx]]
+7(%eax, %ecx, 4) = M[7 + R[%eax] + R[%ecx] * 4]
+
+movl ZEROS OUT upper 32 bits in x64
+
+
+PHASE 1
+
+sub    $0x18,%rsp ---------- allocates 24 bytes of memory on stack
+mov    %fs:0x28,%rax ---------- loads value into rax
+mov    %rax,0x8(%rsp) ---------- loads value into the stack at an offset of 8 bytes
+xor    %eax,%eax ---------- xors eax with itself (zeros out the latter 32 bits in eax)
+movl   $0x0,0x4(%rsp) ---------- loads 0 into the stack at an offset of 4 bytes
+lea    0x4(%rsp),%rdx ---------- adds 4 bytes to the stack pointer and then stores that in rdx
+lea    0x1ec9(%rip),%rsi ---------- adds to the rip pointer and then stores it in rsi
+cmp    $0x1,%eax ---------- sets flag after subtracting 1 from eax
+
+PHASE 2
+
+sub    $0x8,%rsp ---------- creates space on the stack by decrementing the rsp pointer
+lea    0x1c2e(%rip),%rsi ---------- adds 0x1c2e to the address of rip and stores it in rsi
+call   1b67 <strings_not_equal> ---------- checks to see if input string is equal to something
+test   %eax,%eax ---------- ands eax (value retured by strings_not_equal) by itself
+jne    15b0 <phase_2+0x1d> ---------- if not equal to 0, explode bomb
+add    $0x8,%rsp ---------- pops previous memory off stack
+
+PHASE 3
+1. push rbx onto the stack
+2. mov value of rdi into rbx
+3. value from stdin is stored in rdi
+4. adding one to rax and then storing in edi
+5. extend the value of 1 added to rax to 64 bits
+6. move the value in rax to rsi
+7. moves rax into a location
+8. moves rdx into a location
+9. moves rax into rsi + 10
+10. moves rdx into rxi + 18
+11. moves rax into another location
+
+PHASE 4
+1. push rbp onto the stack
+2. push rbx onto the stack
+3. create 28 bytes of space on the stack
+4. load memory into rax
+5. load what is in rax to rsp
+6. zero out the rax register
+7. load what is on the stack to rsi
+8. read in size numbers
+9. read in six numbers (stored in rsi or stack?)
+10. subtract 0 from rsp
+11. explod if did not read in 6 numbers
+12. move rsp into into rbp
+
+PHASE 4
+
+
+PHASE 7
+1. push rbx onto the stack
+2. move the value in rdi to rbx
+3. call strinlen function
+4. lenght of string should be 6
+5. move the value of rbx into rax
+6. add 6 to the value in rbx and laod in rdi
+7. make ecx 0
+8. add 0x18f3 to rip, then load in rsi
