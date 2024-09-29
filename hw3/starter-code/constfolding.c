@@ -93,18 +93,20 @@ long ConstFoldPerStatement(Node* stmtNodeRight){
           TODO: YOUR CODE HERE
     **************************************************************************************
     */
-    if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->left->exprCode == CONSTANT && stmtNodeRight->right->exprCode == CONSTANT) {
-        result = CalcExprValue(stmtNodeRight);
-        stmtNodeRight->type = EXPRESSION;
-        stmtNodeRight->stmtCode = S_NONE;
-        stmtNodeRight->exprCode = CONSTANT;
-        stmtNodeRight->opCode = O_NONE;
-        stmtNodeRight->value = result;
-        FreeConstant(stmtNodeRight->left);
-        FreeConstant(stmtNodeRight->right);
-        madeChange = true;
-    }
-    
+
+    result = CalcExprValue(stmtNodeRight);
+        // stmtNodeRight->type = EXPRESSION;
+        // stmtNodeRight->stmtCode = S_NONE;
+        // stmtNodeRight->exprCode = CONSTANT;
+        // stmtNodeRight->opCode = O_NONE;
+        // stmtNodeRight->value = result;
+        // FreeBinaryOperation(stmtNodeRight);
+        // FreeConstant(stmtNodeRight->left);
+        // FreeConstant(stmtNodeRight->right);
+        // free(stmtNodeRight->left);
+        // free(stmtNodeRight->right);
+    FreeBinaryOperation(stmtNodeRight);
+    madeChange = true;    
     return result;
 }
 
@@ -125,11 +127,16 @@ void ConstFoldPerFunction(Node* funcNode) {
           *************************************************************************************
 		TODO: YOUR CODE HERE
           **************************************************************************************
-          */   
-        ConstFoldPerStatement(stmtNodeRight);                                                                                                                            
-	    statements = statements->next;
-      }
-     
+          */
+        if (statements->node->stmtCode != RETURN) {
+            if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->left != NULL && stmtNodeRight->left->exprCode == CONSTANT && stmtNodeRight->right != NULL && stmtNodeRight->right->exprCode == CONSTANT) {
+                long val = ConstFoldPerStatement(stmtNodeRight);
+                Node* insert = CreateNumber(val);
+                statements->node->right = insert;
+            }
+        }
+        statements = statements->next;
+     }
 }
 
 
@@ -154,7 +161,7 @@ bool ConstantFolding(NodeList* list) {
 		TODO: YOUR CODE HERE
           **************************************************************************************
           */
-        if (list->node->opCode == FUNCTIONCALL) {
+        if (list->node->type == FUNCTIONDECL) {
             ConstFoldPerFunction(list->node);
         }
 	    list = list->next;

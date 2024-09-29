@@ -101,7 +101,7 @@ void TrackConst(NodeList* statements) {
             }
           }
 
-          if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->left->exprCode == VARIABLE) {
+          if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->left != NULL && stmtNodeRight->left->exprCode == VARIABLE) {
             refConst* lfound = LookupConstList(stmtNodeRight->left->name);
             if (lfound != NULL) {
               stmtNodeRight->left->exprCode = CONSTANT;
@@ -109,7 +109,7 @@ void TrackConst(NodeList* statements) {
               madeChange = true;
             }
           }
-          if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->right->exprCode == VARIABLE) {
+          if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->right != NULL && stmtNodeRight->right->exprCode == VARIABLE) {
             refConst* rfound = LookupConstList(stmtNodeRight->right->name);
             if (rfound != NULL) {
               stmtNodeRight->right->exprCode = CONSTANT;
@@ -135,7 +135,7 @@ bool ConstProp(NodeList* worklist) {
         TrackConst(statements);
         worklist = worklist->next;
     }
-    FreeList(headNode);
+    FreeConstList(headNode);
     return madeChange;
 }
 
