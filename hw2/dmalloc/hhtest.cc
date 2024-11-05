@@ -46,7 +46,7 @@ void f35(size_t sz) { void* ptr = malloc(sz); free(ptr); }
 void f36(size_t sz) { void* ptr = malloc(sz); free(ptr); }
 void f37(size_t sz) { void* ptr = malloc(sz); free(ptr); }
 void f38(size_t sz) { void* ptr = malloc(sz); free(ptr); }
-void f39(size_t sz) { void* ptr = malloc(sz); free(ptr); }
+wvoid f39(size_t sz) { void* ptr = malloc(sz); free(ptr); }
 
 // An array of those allocation functions
 void (*allocators[])(size_t) = {

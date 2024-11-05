@@ -95,18 +95,14 @@ long ConstFoldPerStatement(Node* stmtNodeRight){
     */
 
     result = CalcExprValue(stmtNodeRight);
-        // stmtNodeRight->type = EXPRESSION;
-        // stmtNodeRight->stmtCode = S_NONE;
-        // stmtNodeRight->exprCode = CONSTANT;
-        // stmtNodeRight->opCode = O_NONE;
-        // stmtNodeRight->value = result;
-        // FreeBinaryOperation(stmtNodeRight);
-        // FreeConstant(stmtNodeRight->left);
-        // FreeConstant(stmtNodeRight->right);
-        // free(stmtNodeRight->left);
-        // free(stmtNodeRight->right);
-    FreeBinaryOperation(stmtNodeRight);
-    madeChange = true;    
+    stmtNodeRight->type = EXPRESSION;
+    stmtNodeRight->stmtCode = S_NONE;
+    stmtNodeRight->exprCode = CONSTANT;
+    stmtNodeRight->opCode = O_NONE;
+    stmtNodeRight->value = result;
+    FreeConstant(stmtNodeRight->right);
+    FreeConstant(stmtNodeRight->left);
+    madeChange = true;   
     return result;
 }
 
@@ -131,8 +127,6 @@ void ConstFoldPerFunction(Node* funcNode) {
         if (statements->node->stmtCode != RETURN) {
             if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->left != NULL && stmtNodeRight->left->exprCode == CONSTANT && stmtNodeRight->right != NULL && stmtNodeRight->right->exprCode == CONSTANT) {
                 long val = ConstFoldPerStatement(stmtNodeRight);
-                Node* insert = CreateNumber(val);
-                statements->node->right = insert;
             }
         }
         statements = statements->next;

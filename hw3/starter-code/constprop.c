@@ -107,14 +107,32 @@ void TrackConst(NodeList* statements) {
               stmtNodeRight->left->exprCode = CONSTANT;
               stmtNodeRight->left->value = lfound->val;
               madeChange = true;
+              free(stmtNodeRight->left->name);
             }
           }
           if (stmtNodeRight->exprCode == OPERATION && stmtNodeRight->right != NULL && stmtNodeRight->right->exprCode == VARIABLE) {
             refConst* rfound = LookupConstList(stmtNodeRight->right->name);
             if (rfound != NULL) {
               stmtNodeRight->right->exprCode = CONSTANT;
-              stmtNodeRight->right->value = rfound->val;
+              stmtNodeRight->right->value = rfound->val;              
               madeChange = true;
+              free(stmtNodeRight->right->name);
+            }
+          }
+        
+          if (stmtNodeRight->opCode == FUNCTIONCALL) {
+            NodeList* curr = stmtNodeRight->arguments;
+            while (curr != NULL) {
+              if (curr->node->exprCode == VARIABLE) {
+                refConst* ffound = LookupConstList(curr->node->name);
+                if (ffound != NULL) {
+                  curr->node->exprCode = CONSTANT;
+                  curr->node->value = ffound->val;
+                  madeChange = true;
+                  free(curr->node->name);
+                }
+              }
+              curr = curr->next;
             }
           }
         }

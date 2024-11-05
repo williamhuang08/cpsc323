@@ -156,8 +156,7 @@ void dmalloc_free(void* ptr, const char* file, long line) {
     size_t ptr_size = *(size_t*) ((uintptr_t)ptr - size_buffer - size_canary);
     size_t* overflow_canary = (size_t*) ((uintptr_t) ptr + ptr_size);
     size_t* underflow_canary = (size_t*) ((uintptr_t) ptr - size_canary);
-    // printf("%p", overflow_canary);
-    // printf("%p", underflow_canary);
+
 
     if (*underflow_canary != canary_value || *overflow_canary != canary_value) {
         fprintf(stderr, "MEMORY BUG: %s:%ld: detected wild write during free of pointer %p", file, line, ptr);
@@ -165,10 +164,6 @@ void dmalloc_free(void* ptr, const char* file, long line) {
     }
     nactive -= 1;
 
-    // if (*overflow_canary != 0xDEADBEEF || *underflow_canary != 0xDEADBEEF){
-    //     fprintf(stderr, "Boundary Write Error");
-    //     exit(1);
-    // }
 
     active_size -= ptr_size;
     ptr = (void*) ((uintptr_t) ptr - size_canary - size_buffer);
@@ -247,20 +242,13 @@ void dmalloc_print_leak_report() {
 void dmalloc_print_heavy_hitter_report() {
 
     sort(alltime);
-    // printf("vector size: %ld", vectorsizes.size());
-    // size_t sum_size = 0;
-    // printf("total_size = %ld\n", total_size);
-    // for (auto & it : vectorsizes) {
-    //     sum_size += it.second;
-    // }
+
 
     for (auto & it : vectorsizes) {
-        // printf("tot_size = %ld\n", total_size);
+
         float percent = (float) it.second / total_size;
-        // printf("individual_size = %ld\n", it.second);
-        // printf("PERCENT = %.1f\n", percent);
+
         if (percent >= 0.2) {
-            // fprintf(stdout, "HEAVY HITTER: %s:%ld: %ld bytes (~%.1f%%)\n", alltime[(uintptr_t) it.first].first, alltime[(uintptr_t) it.first].second, it.second, percent * 100);
             fprintf(stdout, "HEAVY HITTER: %s:%ld: %ld bytes (~%.1f%%)\n", it.first.first, it.first.second, it.second, percent * 100);
 
         }
